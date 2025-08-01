@@ -1,0 +1,40 @@
+# Core Kivy dependencies
+kivy==2.3.1
+kivymd==1.1.1
+
+# HTTP requests and API connections
+requests==2.32.3
+
+# Image processing
+pillow==10.4.0
+opencv-python==4.11.0.86
+opencv-contrib-python==4.11.0.86
+imutils==0.5.4
+
+# Scientific computing and machine learning
+numpy==1.26.4
+tensorflow==2.19.0
+
+# Supabase client
+supabase==2.16.0
+gotrue==2.12.3
+postgrest==1.1.1
+storage3==0.12.0
+realtime==2.5.3
+supafunc==0.10.1
+
+# Audio processing
+sounddevice==0.5.1
+pydub==0.25.1
+playsound==1.2.2
+
+# Mobile platform tools
+plyer==2.1.0
+pyjnius==1.6.1
+
+# Utility libraries
+python-dotenv==1.1.1
+python-dateutil==2.9.0.post0
+
+# Additional dependencies for Android
+cython

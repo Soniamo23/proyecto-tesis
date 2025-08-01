@@ -1,0 +1,155 @@
+name: Build DriverApp Android APK
+
+# Ejecutar cuando se hace push o pull request a main
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  # Permitir ejecución manual
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    
+    steps:
+    # Descargar código del repositorio
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    # Configurar Python 3.9
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    # Instalar dependencias del sistema necesarias para OpenCV y TensorFlow
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          git \
+          python3 \
+          python3-dev \
+          python3-pip \
+          python3-setuptools \
+          python3-wheel \
+          ffmpeg \
+          libsdl2-dev \
+          libsdl2-image-dev \
+          libsdl2-mixer-dev \
+          libsdl2-ttf-dev \
+          libportmidi-dev \
+          libswscale-dev \
+          libavformat-dev \
+          libavcodec-dev \
+          zlib1g-dev \
+          libgstreamer1.0-dev \
+          gstreamer1.0-plugins-base \
+          gstreamer1.0-plugins-good \
+          gstreamer1.0-plugins-bad \
+          gstreamer1.0-plugins-ugly \
+          libgstreamer-plugins-base1.0-dev \
+          libgl1-mesa-dev \
+          libgles2-mesa-dev \
+          libegl1-mesa-dev \
+          libx11-dev \
+          libxext-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libxss-dev \
+          libxxf86vm-dev \
+          libasound2-dev \
+          libpulse-dev \
+          libaudio-dev \
+          libxv-dev \
+          libxvmc-dev \
+          oss-compat \
+          libgtk-3-dev \
+          pkg-config \
+          cmake \
+          ninja-build
+    
+    # Configurar Java 11 (necesario para Android)
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+    
+    # Instalar herramientas de compilación Python
+    - name: Install Python build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools wheel
+        pip install cython==3.0.12
+    
+    # Instalar Buildozer
+    - name: Install Buildozer
+      run: |
+        pip install buildozer==1.5.0
+        pip install python-for-android
+    
+    # Cache de buildozer para acelerar compilaciones futuras
+    - name: Cache Buildozer global directory
+      uses: actions/cache@v3
+      with:
+        path: .buildozer_global
+        key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+    
+    - name: Cache Buildozer directory
+      uses: actions/cache@v3
+      with:
+        path: .buildozer
+        key: ${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+    
+    # Configurar variables de entorno para la compilación
+    - name: Set environment variables
+      run: |
+        export ANDROID_SDK_ROOT=/opt/android-sdk
+        export ANDROID_NDK_ROOT=/opt/android-ndk
+        export PATH=$PATH:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/platform-tools
+    
+    # Compilar la APK
+    - name: Build APK with Buildozer
+      run: |
+        # Inicializar buildozer si es necesario
+        if [ ! -f "buildozer.spec" ]; then
+          buildozer init
+        fi
+        
+        # Compilar APK en modo debug
+        buildozer android debug
+      env:
+        # Variables de entorno para optimizar la compilación
+        BUILDOZER_LOG_LEVEL: 2
+        P4A_RELEASE_KEYSTORE: ""
+        P4A_RELEASE_KEYALIAS: ""
+        P4A_RELEASE_KEYSTORE_PASSWD: ""
+        P4A_RELEASE_KEYALIAS_PASSWD: ""
+    
+    # Renombrar APK con información de versión
+    - name: Rename APK
+      run: |
+        cd bin/
+        mv *.apk DriverApp-v1.0-$(date +%Y%m%d).apk
+    
+    # Subir APK como artefacto
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: DriverApp-Android-APK
+        path: bin/*.apk
+        retention-days: 30
+    
+    # Mostrar información del APK generado
+    - name: APK Info
+      run: |
+        ls -la bin/
+        echo "✅ APK compilado exitosamente!"
+        echo "📱 Puedes descargar tu APK desde la pestaña 'Actions' de GitHub"
+        echo "🎯 La APK estará disponible por 30 días"
